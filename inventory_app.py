@@ -2,111 +2,125 @@ import streamlit as st
 import pandas as pd
 from datetime import date, datetime
 
-# --- إعدادات الصفحة للموبايل ---
-st.set_page_config(page_title="مستودع الزهراء", layout="centered")
+# --- إعدادات الصفحة ---
+st.set_page_config(page_title="نظام إدارة المواد", layout="wide")
 
-# --- تنسيق CSS مخصص للموبايل والحاسبة ---
+# --- التنسيق الاحترافي (بدون تمرير عرضي) ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
     
     html, body, [class*="css"], .stApp {
         font-family: 'Cairo', sans-serif;
         direction: RTL;
         text-align: right;
-    }
-    
-    /* تصميم البطاقة الاحترافية */
-    .inventory-card {
-        background-color: white;
-        border: 2px solid #1e3a8a;
-        border-radius: 15px;
-        padding: 15px;
-        margin-bottom: 15px;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    .card-title {
-        color: #1e3a8a;
-        font-size: 22px;
-        font-weight: 900;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 5px;
-        margin-bottom: 10px;
-    }
-    
-    .card-detail {
-        font-size: 18px;
-        margin-bottom: 5px;
-    }
-    
-    .label {
-        font-weight: bold;
-        color: #555;
+        background-color: #f4f7f9;
     }
 
-    /* تنسيق العناوين الكبيرة */
+    /* الحاوية الرئيسية */
+    .main-header {
+        background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%);
+        padding: 20px;
+        border-radius: 15px;
+        color: white;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    /* تنسيق العناوين للحقول */
     .stTextInput label, .stDateInput label {
-        font-size: 24px !important;
-        font-weight: 900 !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
         color: #1e3a8a !important;
+    }
+
+    /* تنسيق الصفوف لتبدو كجدول متناسق بدون تمرير */
+    .table-row {
+        background-color: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: nowrap; /* يمنع التمرير */
+    }
+
+    .cell {
+        font-size: 14px; /* تصغير الخط للموبايل */
+        padding: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* إخفاء الزوائد */
+    div[data-testid="stVerticalBlock"] > div {
+        padding: 0px !important;
+    }
+
+    /* تحسين شكل الأزرار */
+    .stButton > button {
+        border-radius: 10px;
+        font-size: 14px !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📦 مستودع الزهراء الرقمي")
+# --- واجهة المستخدم ---
+st.markdown("""
+    <div class="main-header">
+        <h2 style='margin:0; font-size: 28px;'>📦 مستودع الزهراء الرقمي</h2>
+        <p style='margin:0; font-size: 14px;'>الإدارة الذكية للمخزون</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# --- الاتصال بالبيانات (استخدمنا هنا مثال بسيط، تأكد من ربط جدولك) ---
-# سأضع هنا كود تجريبي، استبدله بكود الربط الخاص بك إذا كان جاهزاً
-if 'data' not in st.session_state:
-    st.session_state.data = pd.DataFrame(columns=["اسم المادة", "الشركة", "رقم الوجبة", "تاريخ الانتهاء"])
+# إدارة البيانات
+if 'inventory' not in st.session_state:
+    st.session_state.inventory = []
 
-# --- قسم الإضافة ---
-with st.expander("➕ إضافة مادة جديدة", expanded=False):
-    name = st.text_input("اسم المادة")
-    comp = st.text_input("اسم الشركة")
-    batch = st.text_input("رقم الوجبة")
-    expiry = st.date_input("تاريخ الانتهاء")
-    
-    if st.button("💾 حفظ البيانات"):
-        if name and comp:
-            new_row = pd.DataFrame([{"اسم المادة": name, "الشركة": comp, "رقم الوجبة": batch, "تاريخ الانتهاء": str(expiry)}])
-            st.session_state.data = pd.concat([st.session_state.data, new_row], ignore_index=True)
-            st.success("تم الحفظ!")
+# قسم الإضافة (مختصر للموبايل)
+with st.expander("➕ إضافة مادة"):
+    n = st.text_input("المادة")
+    c = st.text_input("الشركة")
+    b = st.text_input("الوجبة")
+    e = st.date_input("النفاذ")
+    if st.button("حفظ", use_container_width=True):
+        if n and c:
+            st.session_state.inventory.append({"n": n, "c": c, "b": b, "e": str(e)})
             st.rerun()
 
-st.divider()
+st.markdown("### 📋 جرد المواد")
+search = st.text_input("", placeholder="ابحث هنا...")
 
-# --- قسم البحث ---
-search_query = st.text_input("🔍 ابحث عن مادة...")
+# عرض البيانات بنظام الأعمدة المرنة
+items = st.session_state.inventory
+if search:
+    items = [i for i in items if search in i['n'] or search in i['c']]
 
-df = st.session_state.data
-if search_query:
-    df = df[df['اسم المادة'].str.contains(search_query, na=False)]
+if items:
+    # رؤوس الأعمدة - توزيع المساحة بذكاء (الاسم يأخذ مساحة أكبر)
+    h1, h2, h3, h4 = st.columns([2.5, 2, 2, 0.8])
+    with h1: st.caption("المادة")
+    with h2: st.caption("الشركة")
+    with h3: st.caption("النفاذ")
+    with h4: st.caption("حذف")
 
-# --- عرض البيانات بنظام البطاقات (Card System) ---
-if not df.empty:
-    for i, row in df.iterrows():
-        # تنبيه التاريخ
-        try:
-            days_left = (datetime.strptime(row["تاريخ الانتهاء"], '%Y-%m-%d').date() - date.today()).days
-            date_color = "red" if days_left < 30 else "#1e3a8a"
-        except: date_color = "black"
-
-        st.markdown(f"""
-            <div class="inventory-card">
-                <div class="card-title">📦 {row['اسم المادة']}</div>
-                <div class="card-detail"><span class="label">الشركة:</span> {row['الشركة']}</div>
-                <div class="card-detail"><span class="label">الوجبة:</span> {row['رقم الوجبة']}</div>
-                <div class="card-detail" style="color: {date_color};">
-                    <span class="label">تاريخ النفاذ:</span> {row['تاريخ الانتهاء']}
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+    for idx, item in enumerate(items):
+        col1, col2, col3, col4 = st.columns([2.5, 2, 2, 0.8])
         
-        # زر الحذف تحت كل بطاقة
-        if st.button(f"❌ حذف {row['اسم المادة']}", key=f"del_{i}"):
-            st.session_state.data = st.session_state.data.drop(i)
-            st.rerun()
+        # تنسيق لون التاريخ
+        exp_date = datetime.strptime(item['e'], '%Y-%m-%d').date()
+        date_color = "red" if (exp_date - date.today()).days < 30 else "black"
+
+        with col1: st.markdown(f"**{item['n']}**")
+        with col2: st.write(f"{item['c']}")
+        with col3: st.markdown(f"<span style='color:{date_color}; font-size:12px;'>{item['e']}</span>", unsafe_allow_html=True)
+        with col4: 
+            if st.button("🗑️", key=f"d_{idx}"):
+                st.session_state.inventory.pop(idx)
+                st.rerun()
+        st.divider()
 else:
-    st.info("لا توجد مواد حالياً.")
+    st.info("لا توجد بيانات")
